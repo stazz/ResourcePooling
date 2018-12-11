@@ -1,14 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
    <PropertyGroup>
-      <TargetFrameworks>netstandard1.3</TargetFrameworks>
+      <TargetFrameworks>netstandard1.3;netstandard2.0</TargetFrameworks>
    </PropertyGroup>
 
    <PropertyGroup>
       <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
       <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
       <TreatSpecificWarningsAsErrors />
-     <GeneratePackageOnBuild Condition=" '$(Configuration)' == 'Release' ">true</GeneratePackageOnBuild>
    </PropertyGroup>
 
    <ItemGroup>
@@ -37,5 +36,7 @@
     <PackageTags>utility async resource pool msbuild task</PackageTags>
     <Title>MSBuild Resource Pooling Support</Title>
   </PropertyGroup>
+
+  <Import Project="$(CIPropsFilePath)" Condition=" '$(CIPropsFilePath)' != '' and Exists('$(CIPropsFilePath)') " />
 
 </Project>

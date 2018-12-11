@@ -27,7 +27,7 @@ namespace ResourcePooling.Async.Abstractions
 {
    /// <summary>
    /// This interface is typically entrypoint for scenarios using CBAM.
-   /// It provides a way to use resources via <see cref="UseResourceAsync(Func{TResource, Task}, CancellationToken)"/> method.
+   /// The most straightforward way, while support for <c>await using</c> is still pending, to use this interface is via <see cref="E_ResourcePooling.UseResourceAsync{TResource, T}(AsyncResourcePool{TResource}, Func{TResource, Task{T}}, CancellationToken)"/> method.
    /// </summary>
    /// <typeparam name="TResource">The type of resources handled by this pool.</typeparam>
    public interface AsyncResourcePool<out TResource> : ResourceFactoryInformation
