@@ -32,15 +32,40 @@ namespace ResourcePooling.Async.Abstractions
    /// <typeparam name="TResource">The type of resources handled by this pool.</typeparam>
    public interface AsyncResourcePool<out TResource> : ResourceFactoryInformation
    {
-      ResourceUsage<TResource> GetResourceUsage( CancellationToken token );
+      /// <summary>
+      /// Returns the asynchronously disposable <see cref="AsyncResourceUsage{TResource}"/> which can be used to access the resource provided by this <see cref="AsyncResourcePool{TResource}"/>.
+      /// </summary>
+      /// <param name="token">The <see cref="CancellationToken"/> to bind the returned <see cref="AsyncResourceUsage{TResource}"/> to.</param>
+      /// <returns>Returns the <see cref="AsyncResourceUsage{TResource}"/> that can be used to access the resource.</returns>
+      /// <remarks>
+      /// While support for <c>await using</c> is still pending, the <see cref="E_ResourcePooling.UseResourceAsync{TResource, T}(AsyncResourcePool{TResource}, Func{TResource, Task{T}}, CancellationToken)"/> convenience methods can be used instead of directly using this method.
+      /// Even with <c>await using</c>, it is more convenient to use <see cref="E_ResourcePooling.GetResourceUsageAsync"/> - this method has signature like this in order to keep <c>out</c> variance of <typeparamref name="TResource"/> type parameter.
+      /// </remarks>
+      AsyncResourceUsage<TResource> GetResourceUsage( CancellationToken token );
    }
 
-
-
-   public interface ResourceUsage<out TResource> : IAsyncDisposable
+   /// <summary>
+   /// This interface allows access to a resource provided by <see cref="AsyncResourcePool{TResource}"/> while capturing the usage scope by extending <see cref="IAsyncDisposable"/>.
+   /// The <see cref="AwaitForResource"/> method should be called after getting instance of this interface, before trying to access <see cref="Resource"/> property.
+   /// </summary>
+   /// <typeparam name="TResource">The type of the resource.</typeparam>
+   public interface AsyncResourceUsage<out TResource> : IAsyncDisposable
    {
+      /// <summary>
+      /// Asynchronously acquires the resource to <see cref="Resource"/> property, if it is not acquired already.
+      /// </summary>
+      /// <returns>A task to be awaited on.</returns>
+      /// <exception cref="InvalidOperationException">If this method is invoked concurrently.</exception>
       Task AwaitForResource();
 
+      /// <summary>
+      /// Gets the resource represented by this <see cref="AsyncResourceUsage{TResource}"/>.
+      /// </summary>
+      /// <value>The resource represented by this <see cref="AsyncResourceUsage{TResource}"/>.</value>
+      /// <remarks>
+      /// This getter will throw an exception if the resource has not been yet fetched by <see cref="AwaitForResource"/> method.
+      /// </remarks>
+      /// <exception cref="InvalidOperationException">If this resource has not yet been fetched by <see cref="AwaitForResource"/>.</exception>
       TResource Resource { get; }
    }
 
@@ -64,17 +89,17 @@ namespace ResourcePooling.Async.Abstractions
       event GenericEventHandler<TCreationArgs> AfterResourceCreationEvent;
 
       /// <summary>
-      /// This event is triggered just before an instance of <typeparamref name="TResource"/> is given to callback of <see cref="AsyncResourcePool{TResource}.UseResourceAsync(Func{TResource, Task}, CancellationToken)"/> method.
+      /// This event is triggered just before an instance of <typeparamref name="TResource"/> is given to callback of <see cref="E_ResourcePooling.UseResourceAsync{TResource, T}(AsyncResourcePool{TResource}, Func{TResource, Task{T}}, CancellationToken)"/> method.
       /// </summary>
       event GenericEventHandler<TAcquiringArgs> AfterResourceAcquiringEvent;
 
       /// <summary>
-      /// This event is triggered right after an instance of <typeparamref name="TResource"/> is re-acquired by resource pool from callback in <see cref="AsyncResourcePool{TResource}.UseResourceAsync(Func{TResource, Task}, CancellationToken)"/> method.
+      /// This event is triggered right after an instance of <typeparamref name="TResource"/> is re-acquired by resource pool from callback in <see cref="E_ResourcePooling.UseResourceAsync{TResource, T}(AsyncResourcePool{TResource}, Func{TResource, Task{T}}, CancellationToken)"/> method.
       /// </summary>
       event GenericEventHandler<TReturningArgs> BeforeResourceReturningEvent;
 
       /// <summary>
-      /// This event is triggered just before the resource is closed (and thus becomes unusuable) by <see cref="AsyncResourcePool{TResource}.UseResourceAsync(Func{TResource, Task}, CancellationToken)"/> or <see cref="AsyncResourcePoolCleanUp{TCleanUpParameter}.CleanUpAsync(TCleanUpParameter, CancellationToken)"/> methods.
+      /// This event is triggered just before the resource is closed (and thus becomes unusuable) by <see cref="E_ResourcePooling.UseResourceAsync{TResource, T}(AsyncResourcePool{TResource}, Func{TResource, Task{T}}, CancellationToken)"/> or <see cref="AsyncResourcePoolCleanUp{TCleanUpParameter}.CleanUpAsync(TCleanUpParameter, CancellationToken)"/> methods.
       /// </summary>
       event GenericEventHandler<TCloseArgs> BeforeResourceCloseEvent;
    }
@@ -297,19 +322,19 @@ namespace ResourcePooling.Async.Abstractions
 
    /// <summary>
    /// This interface represents a <see cref="AsyncResourcePool{TResource}"/> bound to specific <see cref="CancellationToken"/>.
-   /// It is useful when one wants to bind the cancellation token, and let custom callbacks only customize the callback for <see cref="AsyncResourcePool{TResource}.UseResourceAsync(Func{TResource, Task}, CancellationToken)"/> method.
+   /// It is useful when one wants to bind the cancellation token, and let custom callbacks only customize the callback for <see cref="E_ResourcePooling.UseResourceAsync{TResource, T}(AsyncResourcePool{TResource}, Func{TResource, Task{T}}, CancellationToken)"/> method.
    /// </summary>
    /// <typeparam name="TResource">The type of resources handled by the originating pool.</typeparam>
    public interface AsyncResourcePoolUser<out TResource>
    {
       /// <summary>
-      /// Gets the <see cref="CancellationToken"/> that will be passed to <see cref="AsyncResourcePool{TResource}.UseResourceAsync(Func{TResource, Task}, CancellationToken)"/> method.
+      /// Gets the <see cref="CancellationToken"/> that will be passed to <see cref="E_ResourcePooling.UseResourceAsync{TResource, T}(AsyncResourcePool{TResource}, Func{TResource, Task{T}}, CancellationToken)"/> method.
       /// </summary>
-      /// <value>The <see cref="CancellationToken"/> that will be passed to <see cref="AsyncResourcePool{TResource}.UseResourceAsync(Func{TResource, Task}, CancellationToken)"/> method.</value>
+      /// <value>The <see cref="CancellationToken"/> that will be passed to <see cref="E_ResourcePooling.UseResourceAsync{TResource, T}(AsyncResourcePool{TResource}, Func{TResource, Task{T}}, CancellationToken)"/> method.</value>
       CancellationToken Token { get; }
 
       /// <summary>
-      /// Invokes the <see cref="AsyncResourcePool{TResource}.UseResourceAsync(Func{TResource, Task}, CancellationToken)"/> with given asynchronous callback, and the value of <see cref="Token"/> property as <see cref="CancellationToken"/>.
+      /// Invokes the <see cref="E_ResourcePooling.UseResourceAsync{TResource, T}(AsyncResourcePool{TResource}, Func{TResource, Task{T}}, CancellationToken)"/> with given asynchronous callback, and the value of <see cref="Token"/> property as <see cref="CancellationToken"/>.
       /// </summary>
       /// <param name="user">The asynchronous callback to use the resource.</param>
       /// <returns>A task which completes when <paramref name="user"/> callback completes and resource is returned back to the pool.</returns>
@@ -353,11 +378,28 @@ namespace ResourcePooling.Async.Abstractions
 public static partial class E_ResourcePooling
 {
    /// <summary>
+   /// Convenience method to asynchronously get <see cref="AsyncResourceUsage{TResource}"/> from this <see cref="AsyncResourcePool{TResource}"/> by first calling <see cref="AsyncResourcePool{TResource}.GetResourceUsage"/> and then <see cref="AsyncResourceUsage{TResource}.AwaitForResource"/>.
+   /// </summary>
+   /// <typeparam name="TResource">The type of resources handled by this pool.</typeparam>
+   /// <param name="pool">This <see cref="AsyncResourcePool{TResource}"/>.</param>
+   /// <param name="token">The <see cref="CancellationToken"/> to bind returned <see cref="AsyncResourceUsage{TResource}"/> to.</param>
+   /// <returns>Asynchronously returns <see cref="AsyncResourceUsage{TResource}"/> which has its <see cref="AsyncResourceUsage{TResource}.Resource"/> property ready to use without further awaiting.</returns>
+   /// <exception cref="NullReferenceException">If this <see cref="AsyncResourcePool{TResource}"/> is <c>null</c>.</exception>
+   public static async Task<AsyncResourceUsage<TResource>> GetResourceUsageAsync<TResource>( this AsyncResourcePool<TResource> pool, CancellationToken token )
+   {
+      var retVal = pool.GetResourceUsage( token );
+      await retVal.AwaitForResource();
+      return retVal;
+   }
+
+   /// <summary>
    /// Takes an existing resource or creates a new one, runs the given asynchronous callback for it, and returns it back into the pool.
    /// </summary>
+   /// <param name="pool">This <see cref="AsyncResourcePool{TResource}"/>.</param>
    /// <param name="user">The asynchronous callback to use the resource.</param>
    /// <param name="token">The optional <see cref="CancellationToken"/> to use during asynchronous operations inside <paramref name="user"/> callback.</param>
    /// <returns>A task which completes when <paramref name="user"/> callback completes and resource is returned back to the pool.</returns>
+   /// <exception cref="NullReferenceException">If this <see cref="AsyncResourcePool{TResource}"/> is <c>null</c>.</exception>
    public static async Task UseResourceAsync<TResource>( this AsyncResourcePool<TResource> pool, Func<TResource, Task> user, CancellationToken token )
    {
       var usage = pool.GetResourceUsage( token );
@@ -373,8 +415,9 @@ public static partial class E_ResourcePooling
    }
 
 
+
    /// <summary>
-   /// Helper method to invoke <see cref="AsyncResourcePool{TResource}.UseResourceAsync(Func{TResource, Task}, CancellationToken)"/> with callback which asynchronously returns value of type <typeparamref name="T"/>.
+   /// Helper method to invoke <see cref="E_ResourcePooling.UseResourceAsync{TResource, T}(AsyncResourcePool{TResource}, Func{TResource, Task{T}}, CancellationToken)"/> with callback which asynchronously returns value of type <typeparamref name="T"/>.
    /// </summary>
    /// <typeparam name="TResource">The type of resources handled by this pool.</typeparam>
    /// <typeparam name="T">The type of return value of asynchronous callback.</typeparam>
@@ -391,7 +434,7 @@ public static partial class E_ResourcePooling
    }
 
    /// <summary>
-   /// Helper method to invoke <see cref="AsyncResourcePool{TResource}.UseResourceAsync(Func{TResource, Task}, CancellationToken)"/> with callback which synchronously returns value of type <typeparamref name="T"/>.
+   /// Helper method to invoke <see cref="E_ResourcePooling.UseResourceAsync{TResource, T}(AsyncResourcePool{TResource}, Func{TResource, Task{T}}, CancellationToken)"/> with callback which synchronously returns value of type <typeparamref name="T"/>.
    /// </summary>
    /// <typeparam name="TResource">The type of resources handled by this pool.</typeparam>
    /// <typeparam name="T">The type of return value of synchronous callback.</typeparam>
@@ -413,7 +456,7 @@ public static partial class E_ResourcePooling
    }
 
    /// <summary>
-   /// Helper method to invoke <see cref="AsyncResourcePool{TResource}.UseResourceAsync(Func{TResource, Task}, CancellationToken)"/> with callback which synchronously uses the resource.
+   /// Helper method to invoke <see cref="E_ResourcePooling.UseResourceAsync{TResource, T}(AsyncResourcePool{TResource}, Func{TResource, Task{T}}, CancellationToken)"/> with callback which synchronously uses the resource.
    /// </summary>
    /// <typeparam name="TResource">The type of resources handled by this pool.</typeparam>
    /// <param name="pool">This <see cref="AsyncResourcePool{TResource}"/>.</param>

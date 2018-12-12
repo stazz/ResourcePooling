@@ -33,16 +33,15 @@ using TTypeInfo = System.
 
 namespace ResourcePooling.Async.Abstractions
 {
-
+   /// <summary>
+   /// This is configuration interface used when dynamically loading an instance of <see cref="AsyncResourceFactory{TResource}"/>, typically with <see cref="E_ResourcePooling.CreateAsyncResourceFactory"/> extension method for this type.
+   /// </summary>
    public interface ResourceFactoryDynamicCreationConfiguration
    {
       /// <summary>
       /// Gets or sets the value for NuGet package ID of the package holding the type implementing <see cref="AsyncResourceFactoryProvider"/>.
       /// </summary>
       /// <value>The value for NuGet package ID of the package holding the type implementing <see cref="AsyncResourceFactoryProvider"/>.</value>
-      /// <remarks>
-      /// This property is used by <see cref="AcquireResourcePoolProvider"/> when loading an instance of <see cref="AsyncResourceFactoryProvider"/>.
-      /// </remarks>
       /// <seealso cref="PoolProviderVersion"/>
       String PoolProviderPackageID { get; }
 
@@ -51,7 +50,6 @@ namespace ResourcePooling.Async.Abstractions
       /// </summary>
       /// <value>The value for NuGet package version of the package holding the type implementing <see cref="AsyncResourceFactoryProvider"/>.</value>
       /// <remarks>
-      /// This property is used by <see cref="AcquireResourcePoolProvider"/> when loading an instance of <see cref="AsyncResourceFactoryProvider"/>.
       /// The value, if specified, should be parseable into <see cref="T:NuGet.Versioning.VersionRange"/>.
       /// If left out, then the newest version will be used, but this will cause additional overhead when querying for the newest version.
       /// </remarks>
@@ -71,27 +69,49 @@ namespace ResourcePooling.Async.Abstractions
       /// </summary>
       /// <value>The name of the type implementing <see cref="AsyncResourceFactoryProvider"/>, located in assembly within NuGet package specified by <see cref="PoolProviderPackageID"/> and <see cref="PoolProviderVersion"/> properties.</value>
       /// <remarks>
-      /// This value can be left out so that <see cref="AcquireResourcePoolProvider"/> will search for all types within package implementing <see cref="AsyncResourceFactoryProvider"/> and use the first suitable one.
+      /// This value can be left out so that all types of the assembly will be searched to check if any implements <see cref="AsyncResourceFactoryProvider"/>, and use the first suitable type.
       /// </remarks>
       String PoolProviderTypeName { get; }
 
 
    }
 
+   /// <summary>
+   /// This is default implementation of <see cref="ResourceFactoryDynamicCreationConfiguration"/> with setters, so that it can be used with Microsoft.Extensions.Configuration packages.
+   /// </summary>
    public class DefaultResourceFactoryDynamicCreationConfiguration : ResourceFactoryDynamicCreationConfiguration
    {
+      /// <inheritdoc />
       public String PoolProviderPackageID { get; set; }
 
+      /// <inheritdoc />
       public String PoolProviderVersion { get; set; }
 
+      /// <inheritdoc />
       public String PoolProviderAssemblyPath { get; set; }
 
+      /// <inheritdoc />
       public String PoolProviderTypeName { get; set; }
    }
 }
 
+/// <summary>
+/// This class contains extension methods for types defined in this assembly.
+/// </summary>
 public static partial class E_ResourcePooling
 {
+   /// <summary>
+   /// This method asynchronously loads an instance of <see cref="AsyncResourceFactory{TResource}"/> using this <see cref="ResourceFactoryDynamicCreationConfiguration"/> along with required callbacks.
+   /// </summary>
+   /// <typeparam name="TResource">The type of resource that returned <see cref="AsyncResourceFactory{TResource}"/> provides.</typeparam>
+   /// <param name="configuration">This <see cref="ResourceFactoryDynamicCreationConfiguration"/>.</param>
+   /// <param name="assemblyLoader">The callback to asynchronously load assembly. The parameters are, in this order: package ID, package version, and path within the package.</param>
+   /// <param name="creationParametersProvider">The callback to create creation parameters to bind the returned <see cref="AsyncResourceFactory{TResource}"/> to.</param>
+   /// <param name="token">The <see cref="CancellationToken"/> for this asynchronous operation.</param>
+   /// <returns>Asynchronously returns instance of <see cref="AsyncResourceFactory{TResource}"/>, or throws an exception.</returns>
+   /// <exception cref="NullReferenceException">If this <see cref="ResourceFactoryDynamicCreationConfiguration"/> is <c>null.</c></exception>
+   /// <exception cref="InvalidOperationException">If for some reason the <see cref="AsyncResourceFactory{TResource}"/> could not be loaded.</exception>
+   /// <seealso cref="AcquireResourcePoolProvider"/>
    public static async Task<AsyncResourceFactory<TResource>> CreateAsyncResourceFactory<TResource>(
       this ResourceFactoryDynamicCreationConfiguration configuration,
       Func<String, String, String, CancellationToken, Task<Assembly>> assemblyLoader,
@@ -99,13 +119,22 @@ public static partial class E_ResourcePooling
       CancellationToken token
       )
    {
-      (var factoryProvider, var errorMessage) = await AcquireResourcePoolProvider( configuration, assemblyLoader, token );
+      var factory = await AcquireResourcePoolProvider( configuration, assemblyLoader, token );
+      var value = factory.GetFirstOrDefault();
 
-      return ( factoryProvider ?? throw new InvalidOperationException( errorMessage ?? "Unspecified error." ) )
-         .BindCreationParameters<TResource>( creationParametersProvider( factoryProvider ) );
+      return ( value ?? throw new InvalidOperationException( factory.GetSecondOrDefault() ?? "Unspecified error." ) )
+         .BindCreationParameters<TResource>( creationParametersProvider( value ) );
    }
 
-   private static async Task<(AsyncResourceFactoryProvider FactoryProvider, String ErrorMessage)> AcquireResourcePoolProvider(
+   /// <summary>
+   /// This method asynchornously loads an instance of <see cref="AsyncResourceFactoryProvider"/> using this <see cref="ResourceFactoryDynamicCreationConfiguration"/> along with assembly loader callback.
+   /// </summary>
+   /// <param name="configuration">This <see cref="ResourceFactoryDynamicCreationConfiguration"/>.</param>
+   /// <param name="assemblyLoader">The callback to asynchronously load assembly. The parameters are, in this order: package ID, package version, and path within the package.</param>
+   /// <param name="token">The <see cref="CancellationToken"/> for this asynchronous operation.</param>
+   /// <returns>Asynchronously returns a value which either has <see cref="AsyncResourceFactoryProvider"/> or an error message.</returns>
+   /// <exception cref="NullReferenceException">If this <see cref="ResourceFactoryDynamicCreationConfiguration"/> is <c>null</c>.</exception>
+   public static async Task<EitherOr<AsyncResourceFactoryProvider, String>> AcquireResourcePoolProvider(
       ResourceFactoryDynamicCreationConfiguration configuration,
       Func<String, String, String, CancellationToken, Task<Assembly>> assemblyLoader,
       CancellationToken token
@@ -191,7 +220,9 @@ public static partial class E_ResourcePooling
          errorMessage = "Task must be provided callback to load NuGet packages (just make constructor taking it as argument and use UtilPack.NuGet.MSBuild task factory).";
       }
 
-      return (retVal, errorMessage);
+      return retVal == null ?
+         new EitherOr<AsyncResourceFactoryProvider, String>( errorMessage ) :
+         new EitherOr<AsyncResourceFactoryProvider, String>( retVal );
    }
 
    private static Boolean IsAssignableFromIgnoreAssemblyVersion( this TTypeInfo parentType, TTypeInfo childType )

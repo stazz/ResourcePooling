@@ -452,7 +452,7 @@ namespace ResourcePooling.Async.Abstractions
       public Task DisposeAsync() => this.DisposeAsync( default );
 
       /// <summary>
-      /// Returns a new <see cref="ResourceUsageInfo{TResource}"/> in order to start logical scope of using resource, typically at the start of <see cref="AsyncResourcePool{TResource}.UseResourceAsync(Func{TResource, Task}, CancellationToken)"/> method.
+      /// Returns a new <see cref="ResourceUsageInfo{TResource}"/> in order to start logical scope of using resource, typically at the start of <see cref="E_ResourcePooling.UseResourceAsync{TResource, T}(AsyncResourcePool{TResource}, Func{TResource, Task{T}}, CancellationToken)"/> method.
       /// </summary>
       /// <param name="token">The cancellation token for this resource usage scenario.</param>
       /// <returns>A new instance of <see cref="ResourceUsageInfo{TResource}"/> which should have its <see cref="IDisposable.Dispose"/> method called when the usage scenario ends.</returns>

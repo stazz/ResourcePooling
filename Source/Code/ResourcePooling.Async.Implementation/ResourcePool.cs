@@ -84,7 +84,7 @@ namespace ResourcePooling.Async.Implementation
          this.Factory.ResetFactoryState();
       }
 
-      public ResourceUsage<TResource> GetResourceUsage( CancellationToken token )
+      public AsyncResourceUsage<TResource> GetResourceUsage( CancellationToken token )
       {
          var instanceAcquired = 0;
          TResourceInstance instance = default;
@@ -274,7 +274,7 @@ namespace ResourcePooling.Async.Implementation
 
    }
 
-   internal sealed class ResourceUsageImpl<TResource> : ResourceUsage<TResource>
+   internal sealed class ResourceUsageImpl<TResource> : AsyncResourceUsage<TResource>
    {
       private const Int32 INITIAL = 0;
       private const Int32 AWAITING = 1;
@@ -298,7 +298,8 @@ namespace ResourcePooling.Async.Implementation
 
       public async Task AwaitForResource()
       {
-         if ( Interlocked.CompareExchange( ref this._state, AWAITING, INITIAL ) == INITIAL )
+         Int32 prevVal;
+         if ( ( prevVal = Interlocked.CompareExchange( ref this._state, AWAITING, INITIAL ) ) == INITIAL )
          {
             try
             {
@@ -309,7 +310,7 @@ namespace ResourcePooling.Async.Implementation
                Interlocked.Exchange( ref this._state, AWAITED );
             }
          }
-         else
+         else if ( prevVal != AWAITED )
          {
             throw new InvalidOperationException();
          }
@@ -783,7 +784,7 @@ namespace ResourcePooling.Async.Implementation
 /// <summary>
 /// This class contains extension methods for types defined in this assembly.
 /// </summary>
-public static partial class E_UtilPack
+public static partial class E_ResourcePooling
 {
    /// <summary>
    /// Returns <c>true</c> if this <see cref="ResourceDisposeKind"/> is the kind which indicates returning resource to pool.
