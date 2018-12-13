@@ -119,7 +119,7 @@ public static partial class E_ResourcePooling
       CancellationToken token
       )
    {
-      var factory = await AcquireResourcePoolProvider( configuration, assemblyLoader, token );
+      var factory = await ArgumentValidator.ValidateNotNullReference( configuration ).AcquireResourcePoolProvider( assemblyLoader, token );
       var value = factory.GetFirstOrDefault();
 
       return ( value ?? throw new InvalidOperationException( factory.GetSecondOrDefault() ?? "Unspecified error." ) )
@@ -135,42 +135,44 @@ public static partial class E_ResourcePooling
    /// <returns>Asynchronously returns a value which either has <see cref="AsyncResourceFactoryProvider"/> or an error message.</returns>
    /// <exception cref="NullReferenceException">If this <see cref="ResourceFactoryDynamicCreationConfiguration"/> is <c>null</c>.</exception>
    public static async Task<EitherOr<AsyncResourceFactoryProvider, String>> AcquireResourcePoolProvider(
-      ResourceFactoryDynamicCreationConfiguration configuration,
+      this ResourceFactoryDynamicCreationConfiguration configuration,
       Func<String, String, String, CancellationToken, Task<Assembly>> assemblyLoader,
       CancellationToken token
       )
    {
       AsyncResourceFactoryProvider retVal = null;
       String errorMessage = null;
-      if ( assemblyLoader != null )
+      if ( configuration != null )
       {
-         var packageID = configuration.PoolProviderPackageID;
-         if ( !String.IsNullOrEmpty( packageID ) )
+         if ( assemblyLoader != null )
          {
-            try
+            var packageID = configuration.PoolProviderPackageID;
+            if ( !String.IsNullOrEmpty( packageID ) )
             {
-               var assembly = await assemblyLoader(
-                  packageID, // package ID
-                  configuration.PoolProviderVersion,  // optional package version
-                  configuration.PoolProviderAssemblyPath, // optional assembly path within package
-                  token
-                  );
-               if ( assembly != null )
+               try
                {
-                  // Now search for the type
-                  var typeName = configuration.PoolProviderTypeName;
-                  var parentType = typeof( AsyncResourceFactoryProvider ).GetTypeInfo();
-                  var checkParentType = !String.IsNullOrEmpty( typeName );
-                  Type providerType;
-                  if ( checkParentType )
+                  var assembly = await assemblyLoader(
+                     packageID, // package ID
+                     configuration.PoolProviderVersion,  // optional package version
+                     configuration.PoolProviderAssemblyPath, // optional assembly path within package
+                     token
+                     );
+                  if ( assembly != null )
                   {
-                     // Instantiate directly
-                     providerType = assembly.GetType( typeName ); //, false, false );
-                  }
-                  else
-                  {
-                     // Search for first available
-                     providerType = assembly.
+                     // Now search for the type
+                     var typeName = configuration.PoolProviderTypeName;
+                     var parentType = typeof( AsyncResourceFactoryProvider ).GetTypeInfo();
+                     var checkParentType = !String.IsNullOrEmpty( typeName );
+                     Type providerType;
+                     if ( checkParentType )
+                     {
+                        // Instantiate directly
+                        providerType = assembly.GetType( typeName ); //, false, false );
+                     }
+                     else
+                     {
+                        // Search for first available
+                        providerType = assembly.
 #if NET40
                            GetTypes()
 #else
@@ -181,43 +183,48 @@ public static partial class E_ResourcePooling
                            ?.AsType()
 #endif
                            ;
-                  }
+                     }
 
-                  if ( providerType != null )
-                  {
-                     if ( !checkParentType || parentType.IsAssignableFromIgnoreAssemblyVersion( providerType.GetTypeInfo() ) )
+                     if ( providerType != null )
                      {
-                        // All checks passed, instantiate the pool provider
-                        retVal = (AsyncResourceFactoryProvider) Activator.CreateInstance( providerType );
+                        if ( !checkParentType || parentType.IsAssignableFromIgnoreAssemblyVersion( providerType.GetTypeInfo() ) )
+                        {
+                           // All checks passed, instantiate the pool provider
+                           retVal = (AsyncResourceFactoryProvider) Activator.CreateInstance( providerType );
+                        }
+                        else
+                        {
+                           errorMessage = $"The type \"{providerType.FullName}\" in \"{assembly}\" does not have required parent type \"{parentType.FullName}\".";
+                        }
                      }
                      else
                      {
-                        errorMessage = $"The type \"{providerType.FullName}\" in \"{assembly}\" does not have required parent type \"{parentType.FullName}\".";
+                        errorMessage = $"Failed to find type within assembly in \"{assembly}\", try specify \"{nameof( configuration.PoolProviderTypeName )}\" configuration parameter.";
                      }
                   }
                   else
                   {
-                     errorMessage = $"Failed to find type within assembly in \"{assembly}\", try specify \"{nameof( configuration.PoolProviderTypeName )}\" configuration parameter.";
+                     errorMessage = $"Failed to load resource pool provider package \"{packageID}\".";
                   }
                }
-               else
+               catch ( Exception exc )
                {
-                  errorMessage = $"Failed to load resource pool provider package \"{packageID}\".";
+                  errorMessage = $"An exception occurred when acquiring resource pool provider: {exc.Message}";
                }
             }
-            catch ( Exception exc )
+            else
             {
-               errorMessage = $"An exception occurred when acquiring resource pool provider: {exc.Message}";
+               errorMessage = $"No NuGet package ID were provided as \"{nameof( configuration.PoolProviderPackageID )}\" configuration parameter. The package ID should be of the package holding implementation for \"{nameof( AsyncResourceFactoryProvider )}\" type.";
             }
          }
          else
          {
-            errorMessage = $"No NuGet package ID were provided as \"{nameof( configuration.PoolProviderPackageID )}\" configuration parameter. The package ID should be of the package holding implementation for \"{nameof( AsyncResourceFactoryProvider )}\" type.";
+            errorMessage = "Task must be provided callback to load NuGet packages (just make constructor taking it as argument and use UtilPack.NuGet.MSBuild task factory).";
          }
       }
       else
       {
-         errorMessage = "Task must be provided callback to load NuGet packages (just make constructor taking it as argument and use UtilPack.NuGet.MSBuild task factory).";
+         errorMessage = "Configuration was not provided.";
       }
 
       return retVal == null ?

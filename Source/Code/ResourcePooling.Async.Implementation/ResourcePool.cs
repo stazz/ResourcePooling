@@ -27,7 +27,7 @@ using UtilPack;
 namespace ResourcePooling.Async.Implementation
 {
    /// <summary>
-   /// This class implements the <see cref="AsyncResourcePoolObservable{TResource}"/> interface in such way that the resource is disposed of after each use in <see cref="UseResourceAsync(Func{TResource, Task}, CancellationToken)"/> method.
+   /// This class implements the <see cref="AsyncResourcePoolObservable{TResource}"/> interface in such way that the resource is disposed of every time it is returned back to the pool.
    /// </summary>
    /// <typeparam name="TResource">The type of resource.</typeparam>
    /// <typeparam name="TResourceInstance">The type of instance holding the resource.</typeparam>
@@ -194,7 +194,7 @@ namespace ResourcePooling.Async.Implementation
       protected GenericEventHandler<AfterAsyncResourceAcquiringEventArgs<TResource>> AfterResourceAcquiringEventInstance => this.AfterResourceAcquiringEvent;
 
       /// <summary>
-      /// This method is called by <see cref="UseResourceAsync(Func{TResource, Task}, CancellationToken)"/> before invoking the given asynchronous callback.
+      /// This method is called by <see cref="AsyncResourceUsage{TResource}.AwaitForResource"/> via callback provided by <see cref="GetResourceUsage"/> method.
       /// The implementation in this class always uses <see cref="AsyncResourceFactory{TResource}.CreateAcquireResourceContext(CancellationToken)"/> method of this <see cref="Factory"/>, but derived classes may override this method to cache previously used resources into a pool.
       /// </summary>
       /// <param name="token">The <see cref="CancellationToken"/> to use.</param>
@@ -217,9 +217,9 @@ namespace ResourcePooling.Async.Implementation
       }
 
       /// <summary>
-      /// This method is called by <see cref="UseResourceAsync(Func{TResource, Task}, CancellationToken)"/> after the asynchronous callback has finished using the resource.
+      /// This method is called by <see cref="IAsyncDisposable.DisposeAsync"/> of the <see cref="AsyncResourceUsage{TResource}"/> returned by <see cref="GetResourceUsage"/>.
       /// </summary>
-      /// <param name="resource">The resource that was used by the asynchronous callback of <see cref="UseResourceAsync(Func{TResource, Task}, CancellationToken)"/>.</param>
+      /// <param name="resource">The resource that is being returned to pool.</param>
       /// <param name="token">The <see cref="CancellationToken"/>.</param>
       /// <returns>Task which is completed when disposing the resource is completed.</returns>
       /// <remarks>

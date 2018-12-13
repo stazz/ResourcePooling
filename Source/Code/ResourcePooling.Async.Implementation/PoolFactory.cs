@@ -51,9 +51,9 @@ namespace ResourcePooling.Async.Implementation
    {
       private const Int32 DEFAULT_TICK = 100;
 
-      internal Int32 currentlyUsedUpResources;
-      internal readonly Func<Int32> maxGetter;
-      internal readonly TimeSpan tick;
+      private Int32 currentlyUsedUpResources;
+      private readonly Func<Int32> maxGetter;
+      private readonly TimeSpan tick;
 
       public PoolLimitState(
          Func<Int32> getMaximumConcurrentlyUsedResources,
@@ -124,7 +124,7 @@ public static partial class E_ResourcePooling
 {
 
    /// <summary>
-   /// Binds the given creation parameters and creates a <see cref="AsyncResourcePoolObservable{TResource}"/> which will always create new instance of resource when invoking <see cref="AsyncResourcePool{TResource}.UseResourceAsync"/> and <see cref="AsyncResourcePool{TResource}.TakeResourceAsync"/> methods.
+   /// Binds the given creation parameters and creates a <see cref="AsyncResourcePoolObservable{TResource}"/> which will always create new instance of resource when acquiring resource from <see cref="AsyncResourcePool{TResource}"/>.
    /// </summary>
    /// <typeparam name="TResource">The type of resource.</typeparam>
    /// <param name="factory">This <see cref="AsyncResourceFactory{TResource}"/>.</param>
@@ -150,7 +150,7 @@ public static partial class E_ResourcePooling
      ) => factory.CreateGenericTimeoutingResourcePool( null, null );
 
    /// <summary>
-   /// Binds the given creation parameters and creates a <see cref="AsyncResourcePoolObservable{TResource}"/> which will create up to given dynamic maximum of resources when invoking <see cref="AsyncResourcePool{TResource}.UseResourceAsync"/> and <see cref="AsyncResourcePool{TResource}.TakeResourceAsync"/> methods, but will never release them.
+   /// Binds the given creation parameters and creates a <see cref="AsyncResourcePoolObservable{TResource}"/> which will create up to given dynamic maximum of resources when acquiring them from <see cref="AsyncResourcePool{TResource}"/>.
    /// </summary>
    /// <typeparam name="TResource">The type of resource.</typeparam>
    /// <param name="factory">This <see cref="AsyncResourceFactory{TResource}"/>.</param>
@@ -194,7 +194,7 @@ public static partial class E_ResourcePooling
    }
 
    /// <summary>
-   /// Binds the given creation parameters and creates a <see cref="AsyncResourcePoolObservable{TResource}"/> which will create up to given static maximum of resources when invoking <see cref="AsyncResourcePool{TResource}.UseResourceAsync"/> and <see cref="AsyncResourcePool{TResource}.TakeResourceAsync"/> methods.
+   /// Binds the given creation parameters and creates a <see cref="AsyncResourcePoolObservable{TResource}"/> which will create up to given static maximum of resources when acquiring them from <see cref="AsyncResourcePool{TResource}"/>.
    /// </summary>
    /// <typeparam name="TResource">The type of resource.</typeparam>
    /// <param name="factory">This <see cref="AsyncResourceFactory{TResource}"/>.</param>
@@ -220,7 +220,7 @@ public static partial class E_ResourcePooling
        ) => factory.CreateTimeoutingAndLimitedResourcePool( () => maximumConcurrentlyUsedResources );
 
    /// <summary>
-   /// Binds the given creation parameters and creates a <see cref="AsyncResourcePoolObservable{TResource}"/> which will call given callbacks when invoking <see cref="AsyncResourcePool{TResource}.UseResourceAsync"/>, <see cref="AsyncResourcePool{TResource}.TakeResourceAsync"/> and <see cref="AsyncResourcePool{TResource}.ReturnResource"/> methods.
+   /// Binds the given creation parameters and creates a <see cref="AsyncResourcePoolObservable{TResource}"/> which will call given callbacks when acquiring and returning resources of the <see cref="AsyncResourcePool{TResource}"/>.
    /// </summary>
    /// <typeparam name="TResource">The type of resource.</typeparam>
    /// <param name="factory">This <see cref="AsyncResourceFactory{TResource}"/>.</param>
@@ -243,7 +243,7 @@ public static partial class E_ResourcePooling
          );
 
    /// <summary>
-   /// Binds the given creation parameters and creates a <see cref="AsyncResourcePoolObservable{TResource, TCleanUp}"/> which will cache the resources, and call given callbacks when invoking <see cref="AsyncResourcePool{TResource}.UseResourceAsync"/>, <see cref="AsyncResourcePool{TResource}.TakeResourceAsync"/> and <see cref="AsyncResourcePool{TResource}.ReturnResource"/> methods. By calling <see cref="AsyncResourcePoolCleanUp{TCleanUpParameter}.CleanUpAsync"/> method it will close all resources which have been opened for too long.
+   /// Binds the given creation parameters and creates a <see cref="AsyncResourcePoolObservable{TResource, TCleanUp}"/> which will cache the resources, and call given callbacks when acquiring and returning resources of the <see cref="AsyncResourcePool{TResource}"/>. By calling <see cref="AsyncResourcePoolCleanUp{TCleanUpParameter}.CleanUpAsync"/> method it will close all resources which have been opened for too long.
    /// </summary>
    /// <typeparam name="TResource">The type of resource.</typeparam>
    /// <param name="factory">This <see cref="AsyncResourceFactory{TResource}"/>.</param>

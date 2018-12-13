@@ -43,7 +43,7 @@ namespace ResourcePooling.Async.MSBuild
    /// This task is meant to be used with <see href="">UtilPack.NuGet.MSBuild</see> task factory, since this task will dynamically load NuGet packages.
    /// More specifically, this task should be loaded using 
    /// </remarks>
-   public abstract class AbstractResourceUsingTask<TResource> : Microsoft.Build.Utilities.Task, ICancelableTask, ResourceFactoryDynamicCreationNuGetBasedConfiguration
+   public abstract class AbstractResourceUsingTask<TResource> : Microsoft.Build.Utilities.Task, ICancelableTask, ResourceFactoryDynamicCreationFileBasedConfiguration
    {
       private readonly TNuGetPackageResolverCallback _nugetPackageResolver;
 
@@ -71,17 +71,9 @@ namespace ResourcePooling.Async.MSBuild
       /// <remarks>
       /// This method calls other methods in the following order:
       /// <list type="number">
-      /// <item><description><see cref="CheckTaskParametersBeforeResourcePoolUsage"/>,</description></item>
-      /// <item><description><see cref="AcquireResourcePoolProvider"/>,</description></item>
-      /// <item><description><see cref="ProvideResourcePoolCreationParameters"/>,</description></item>
-      /// <item><description><see cref="AcquireResourcePool"/>, and</description></item>
       /// <item><description><see cref="UseResource"/>.</description></item>
       /// </list>
       /// </remarks>
-      /// <seealso cref="CheckTaskParametersBeforeResourcePoolUsage"/>
-      /// <seealso cref="AcquireResourcePoolProvider"/>
-      /// <seealso cref="ProvideResourcePoolCreationParameters"/>
-      /// <seealso cref="AcquireResourcePool"/>
       /// <seealso cref="UseResource"/>
       public override Boolean Execute()
       {
@@ -252,7 +244,7 @@ namespace ResourcePooling.Async.MSBuild
       /// <summary>
       /// Derived classes should implement this method to perform domain-specific functionality using the given resource.
       /// </summary>
-      /// <param name="resource">The resource obtained from <see cref="AsyncResourcePool{TResource}"/>, which was returned by <see cref="AcquireResourcePool"/> method.</param>
+      /// <param name="resource">The resource obtained from <see cref="AsyncResourcePool{TResource}"/>.</param>
       /// <returns></returns>
       protected abstract Task<Boolean> UseResource( TResource resource );
 
@@ -353,9 +345,6 @@ namespace ResourcePooling.Async.MSBuild
       /// Gets or sets the value for NuGet package ID of the package holding the type implementing <see cref="AsyncResourceFactoryProvider"/>.
       /// </summary>
       /// <value>The value for NuGet package ID of the package holding the type implementing <see cref="AsyncResourceFactoryProvider"/>.</value>
-      /// <remarks>
-      /// This property is used by <see cref="AcquireResourcePoolProvider"/> when loading an instance of <see cref="AsyncResourceFactoryProvider"/>.
-      /// </remarks>
       /// <seealso cref="PoolProviderVersion"/>
       public String PoolProviderPackageID { get; set; }
 
@@ -364,7 +353,6 @@ namespace ResourcePooling.Async.MSBuild
       /// </summary>
       /// <value>The value for NuGet package version of the package holding the type implementing <see cref="AsyncResourceFactoryProvider"/>.</value>
       /// <remarks>
-      /// This property is used by <see cref="AcquireResourcePoolProvider"/> when loading an instance of <see cref="AsyncResourceFactoryProvider"/>.
       /// The value, if specified, should be parseable into <see cref="T:NuGet.Versioning.VersionRange"/>.
       /// If left out, then the newest version will be used, but this will cause additional overhead when querying for the newest version.
       /// </remarks>
@@ -383,9 +371,6 @@ namespace ResourcePooling.Async.MSBuild
       /// Gets or sets the name of the type implementing <see cref="AsyncResourceFactoryProvider"/>, located in assembly within NuGet package specified by <see cref="PoolProviderPackageID"/> and <see cref="PoolProviderVersion"/> properties.
       /// </summary>
       /// <value>The name of the type implementing <see cref="AsyncResourceFactoryProvider"/>, located in assembly within NuGet package specified by <see cref="PoolProviderPackageID"/> and <see cref="PoolProviderVersion"/> properties.</value>
-      /// <remarks>
-      /// This value can be left out so that <see cref="AcquireResourcePoolProvider"/> will search for all types within package implementing <see cref="AsyncResourceFactoryProvider"/> and use the first suitable one.
-      /// </remarks>
       public String PoolProviderTypeName { get; set; }
 
       /// <summary>
@@ -393,10 +378,8 @@ namespace ResourcePooling.Async.MSBuild
       /// </summary>
       /// <value>The path to the configuration file holding creation parameter for <see cref="AsyncResourceFactoryProvider.BindCreationParameters"/>.</value>
       /// <remarks>
-      /// This property is used by <see cref="ProvideResourcePoolCreationParameters"/> method.
       /// This property should not be used together with <see cref="PoolConfigurationFileContents"/>, because <see cref="PoolConfigurationFileContents"/> takes precedence over this property.
       /// </remarks>
-      /// <seealso cref="ProvideResourcePoolCreationParameters"/>
       /// <seealso cref="PoolConfigurationFileContents"/>
       public String PoolConfigurationFilePath { get; set; }
 
@@ -404,10 +387,6 @@ namespace ResourcePooling.Async.MSBuild
       /// Gets or sets the configuration file contents in-place, instead of using <see cref="PoolConfigurationFilePath"/> file path.
       /// This property takes precedence over <see cref="PoolConfigurationFilePath"/>
       /// </summary>
-      /// <remarks>
-      /// This property is used by <see cref="ProvideResourcePoolCreationParameters"/> method.
-      /// </remarks>
-      /// <seealso cref="ProvideResourcePoolCreationParameters"/>
       /// <seealso cref="PoolConfigurationFilePath"/>
       public String PoolConfigurationFileContents { get; set; }
    }
