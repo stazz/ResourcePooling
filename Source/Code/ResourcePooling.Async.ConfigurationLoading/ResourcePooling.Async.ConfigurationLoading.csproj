@@ -11,9 +11,14 @@
       <LangVersion>latest</LangVersion>
    </PropertyGroup>
 
+  <PropertyGroup>
+    <MicrosoftConfigurationVersion Condition=" '$(TargetFramework)' == 'netstandard2.0' ">2.2.0</MicrosoftConfigurationVersion>
+    <MicrosoftConfigurationVersion Condition=" '$(MicrosoftConfigurationVersion)' == '' ">1.1.2</MicrosoftConfigurationVersion>
+  </PropertyGroup>
+
    <ItemGroup>
-      <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="1.1.2" />
-      <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="1.1.2" />
+      <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="$(MicrosoftConfigurationVersion)" />
+      <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="$(MicrosoftConfigurationVersion)" />
    </ItemGroup>
 
    <ItemGroup>
@@ -29,7 +34,7 @@
       <VersionPrefix>1.0.0</VersionPrefix>
       <VersionSuffix></VersionSuffix>
       <AssemblyTitle>$(AssemblyName)</AssemblyTitle>
-      <Description>Library containing required types and methods for loading AsyncFactory dynamically from serialized configuration.</Description>
+      <Description>Library API and implementation for situations when using pool factory of ResourcePooling.Async package with its parameter being serialized as JSON file on disk, or as a JSON string.</Description>
    </PropertyGroup>
 
    <!-- NuGet package stuff -->
@@ -39,7 +44,7 @@
       <PackageVersion Condition=" '$(VersionSuffix)' != ''">$(PackageVersion)-$(VersionSuffix)</PackageVersion>
       <PackageReleaseNotes>Initial release.</PackageReleaseNotes>
       <PackageTags>utility extensions dynamically load assembly resource pool async</PackageTags>
-      <Title>Resource Pooling Dynamic Configuration Loading</Title>
+      <Title>Asynchronous Resource Pooling: Configuration-Based Dynamic Loading</Title>
    </PropertyGroup>
 
   <Import Project="$(CIPropsFilePath)" Condition=" '$(CIPropsFilePath)' != '' and Exists('$(CIPropsFilePath)') " />
