@@ -175,7 +175,9 @@ namespace ResourcePooling.Async.Abstractions
       /// Creates a new instance of <see cref="ValueTaskAsyncResourceAcquireContext{TResource}"/> with given <see cref="ValueTask{TResult}"/>.
       /// </summary>
       /// <param name="task">The potentially asynchronously completing task returning <see cref="AsyncResourceAcquireInfo{TResource}"/>.</param>
-      public ValueTaskAsyncResourceAcquireContext( ValueTask<AsyncResourceAcquireInfo<TResource>> task )
+      public ValueTaskAsyncResourceAcquireContext(
+         ValueTask<AsyncResourceAcquireInfo<TResource>> task
+         )
       {
          this._task = task;
       }
@@ -205,6 +207,7 @@ namespace ResourcePooling.Async.Abstractions
             TaskUtils.CompletedTask :
             this._task.AsTask();
       }
+
    }
 
    /// <summary>
@@ -250,6 +253,7 @@ namespace ResourcePooling.Async.Abstractions
       {
          return this._task;
       }
+
    }
 
    /// <summary>

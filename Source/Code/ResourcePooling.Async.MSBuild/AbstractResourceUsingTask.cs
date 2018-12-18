@@ -134,9 +134,17 @@ namespace ResourcePooling.Async.MSBuild
          var retVal = factory != null;
          if ( retVal )
          {
-            return await factory
+            var usage = await factory
                .CreateOneTimeUseResourcePool()
-               .UseResourceAsync( this.UseResource, this.CancellationToken );
+               .GetResourceUsageAsync( this.CancellationToken );
+            try
+            {
+               await this.UseResource( usage );
+            }
+            finally
+            {
+               await usage.DisposeAsync();
+            }
          }
          return retVal;
       }
@@ -246,7 +254,7 @@ namespace ResourcePooling.Async.MSBuild
       /// </summary>
       /// <param name="resource">The resource obtained from <see cref="AsyncResourcePool{TResource}"/>.</param>
       /// <returns></returns>
-      protected abstract Task<Boolean> UseResource( TResource resource );
+      protected abstract Task<Boolean> UseResource( AsyncResourceUsage<TResource> resource );
 
       ///// <summary>
       ///// This method is called by <see cref="Execute"/> after calling <see cref="CheckTaskParametersBeforeResourcePoolUsage"/>.
