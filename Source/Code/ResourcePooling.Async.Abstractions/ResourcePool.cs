@@ -68,6 +68,10 @@ namespace ResourcePooling.Async.Abstractions
       /// <exception cref="InvalidOperationException">If this resource has not yet been fetched by <see cref="AwaitForResource"/>.</exception>
       TResource Resource { get; }
 
+      /// <summary>
+      /// Gets the <see cref="System.Threading.CancellationToken"/> associated with this <see cref="AsyncResourceUsage{TResource}"/>.
+      /// </summary>
+      /// <value>The <see cref="System.Threading.CancellationToken"/> associated with this <see cref="AsyncResourceUsage{TResource}"/>.</value>
       CancellationToken CancellationToken { get; }
    }
 
