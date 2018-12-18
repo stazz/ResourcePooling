@@ -90,6 +90,7 @@ namespace ResourcePooling.Async.Implementation
          TResourceInstance instance = default;
          ResourceUsageInfo<TResource> usage = default;
          return new ResourceUsageImpl<TResource>(
+            token,
             async () =>
             {
                instance = await this.AcquireResourceAsync( token );
@@ -287,10 +288,12 @@ namespace ResourcePooling.Async.Implementation
       private readonly Func<Task> _dispose;
 
       public ResourceUsageImpl(
+         CancellationToken token,
          Func<Task<TResource>> acquire,
          Func<Task> dispose
          )
       {
+         this.CancellationToken = token;
          this._acquire = ArgumentValidator.ValidateNotNull( nameof( acquire ), acquire );
          this._dispose = ArgumentValidator.ValidateNotNull( nameof( dispose ), dispose );
       }
@@ -337,6 +340,8 @@ namespace ResourcePooling.Async.Implementation
             await this._dispose();
          }
       }
+
+      public CancellationToken CancellationToken { get; }
    }
 
    /// <summary>
