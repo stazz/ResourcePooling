@@ -11,7 +11,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ResourcePooling.Async.Imple
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ResourcePooling.Async.MSBuild", "Code\ResourcePooling.Async.MSBuild\ResourcePooling.Async.MSBuild.csproj", "{8285937F-7186-4F6C-8B2A-30D2036693EB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests.ResourcePooling.Async.Implementation", "Tests\Tests.ResourcePooling.Async.Implementation\Tests.ResourcePooling.Async.Implementation.csproj", "{5B16DD25-35DE-497B-A0E0-5BCF177DE867}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tests.ResourcePooling.Async.Implementation", "Tests\Tests.ResourcePooling.Async.Implementation\Tests.ResourcePooling.Async.Implementation.csproj", "{5B16DD25-35DE-497B-A0E0-5BCF177DE867}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests.ResourcePooling.Async.Abstractions", "Tests\Tests.ResourcePooling.Async.Abstractions\Tests.ResourcePooling.Async.Abstractions.csproj", "{A7B84FA3-32DF-4BDB-835A-77DEE71F0C57}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -39,6 +41,10 @@ Global
 		{5B16DD25-35DE-497B-A0E0-5BCF177DE867}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5B16DD25-35DE-497B-A0E0-5BCF177DE867}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5B16DD25-35DE-497B-A0E0-5BCF177DE867}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A7B84FA3-32DF-4BDB-835A-77DEE71F0C57}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A7B84FA3-32DF-4BDB-835A-77DEE71F0C57}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A7B84FA3-32DF-4BDB-835A-77DEE71F0C57}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A7B84FA3-32DF-4BDB-835A-77DEE71F0C57}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

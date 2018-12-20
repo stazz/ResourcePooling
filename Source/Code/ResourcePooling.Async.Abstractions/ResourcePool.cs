@@ -76,6 +76,112 @@ namespace ResourcePooling.Async.Abstractions
    }
 
    /// <summary>
+   /// This class provides default, callback-based, implementation for <see cref="AsyncResourceUsage{TResource}"/>.
+   /// </summary>
+   /// <typeparam name="TResource">The type of the resource.</typeparam>
+   /// <remarks>
+   /// This class will throw an exception if <see cref="AwaitForResource"/> is called concurrently.
+   /// </remarks>
+   public sealed class DefaultAsyncResourceUsage<TResource> : AsyncResourceUsage<TResource>
+   {
+      private const Int32 INITIAL = 0;
+      private const Int32 AWAITING = 1;
+      private const Int32 AWAITED = 2;
+      private const Int32 DISPOSING = 3;
+
+      private Int32 _state;
+      private readonly Func<Task<TResource>> _acquire;
+      private TResource _resource;
+      private readonly Func<Task> _dispose;
+
+      /// <summary>
+      /// Creates a new instance of<see cref="DefaultAsyncResourceUsage{TResource}"/> with given <see cref="System.Threading.CancellationToken"/> and callbacks for resource acquirement and disposing.
+      /// </summary>
+      /// <param name="token">The <see cref="System.Threading.CancellationToken"/>.</param>
+      /// <param name="acquire">The callback to acquire the resource. This class will ensure this will be called at most once.</param>
+      /// <param name="dispose">The callback to dispose the resource. This class will ensure this will be called at most once.</param>
+      public DefaultAsyncResourceUsage(
+         CancellationToken token,
+         Func<Task<TResource>> acquire,
+         Func<Task> dispose
+         )
+      {
+         this.CancellationToken = token;
+         this._acquire = ArgumentValidator.ValidateNotNull( nameof( acquire ), acquire );
+         this._dispose = ArgumentValidator.ValidateNotNull( nameof( dispose ), dispose );
+      }
+
+      /// <summary>
+      /// Implements <see cref="AsyncResourceUsage{TResource}.AwaitForResource"/> by calling the callback given to constructor. Will throw an exception if this is called concurrently.
+      /// </summary>
+      /// <returns>Task to be awaited on.</returns>
+      /// <exception cref="InvalidOperationException">If this is called concurrently.</exception>
+      public async Task AwaitForResource()
+      {
+         Int32 prevVal;
+         if ( ( prevVal = Interlocked.CompareExchange( ref this._state, AWAITING, INITIAL ) ) == INITIAL )
+         {
+            try
+            {
+               this._resource = await this._acquire();
+            }
+            finally
+            {
+               Interlocked.Exchange( ref this._state, AWAITED );
+            }
+         }
+         else if ( prevVal != AWAITED )
+         {
+            throw new InvalidOperationException();
+         }
+      }
+
+
+      /// <summary>
+      /// Implements <see cref="AsyncResourceUsage{TResource}.Resource"/>, will return acquired resource if <see cref="AwaitForResource"/> is called and awaited on.
+      /// </summary>
+      /// <value>The resource.</value>
+      /// <exception cref="InvalidOperationException">If the <see cref="AwaitForResource"/> has not been called yet, or if it not yet completed.</exception>
+      public TResource Resource
+      {
+         get
+         {
+            if ( this._state != AWAITED )
+            {
+               throw new InvalidOperationException();
+            }
+            return this._resource;
+         }
+      }
+
+      /// <summary>
+      /// Implements <see cref="IAsyncDisposable.DisposeAsync"/>, will call the callback given to constructor. Will throw an exception if called concurrently.
+      /// </summary>
+      /// <returns>Task to be awaited on.</returns>
+      /// <exception cref="InvalidOperationException">If this method is called concurrently with itself, or with <see cref="AwaitForResource"/>.</exception>
+      public async Task DisposeAsync()
+      {
+         if ( Interlocked.CompareExchange( ref this._state, DISPOSING, AWAITED ) == AWAITED
+            || Interlocked.CompareExchange( ref this._state, DISPOSING, INITIAL ) == INITIAL
+            )
+         {
+            await this._dispose();
+         }
+         else
+         {
+            // Either we called this concurrently with AwaitForResource, or concurrently with this same method, in either case throw an exception
+            throw new InvalidOperationException();
+         }
+      }
+
+      /// <summary>
+      /// Implements <see cref="AsyncResourceUsage{TResource}.CancellationToken"/>.
+      /// </summary>
+      /// <value>The <see cref="System.Threading.CancellationToken"/> passed to constructor.</value>
+      public CancellationToken CancellationToken { get; }
+   }
+
+   /// <summary>
    /// This interface exposes events related to observing a <see cref="AsyncResourcePool{TResource}"/>.
    /// </summary>
    /// <typeparam name="TResource">The type of resources handled by this pool.</typeparam>
@@ -435,7 +541,10 @@ public static partial class E_ResourcePooling
    public static async Task<T> UseResourceAsync<TResource, T>( this AsyncResourcePool<TResource> pool, Func<TResource, Task<T>> user, CancellationToken token )
    {
       var retVal = default( T );
-      await pool.UseResourceAsync( async resource => retVal = await user( resource ), token );
+      await pool.UseResourceAsync( async resource =>
+      {
+         retVal = await user( resource );
+      }, token );
       return retVal;
    }
 
