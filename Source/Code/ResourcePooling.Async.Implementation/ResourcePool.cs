@@ -89,7 +89,7 @@ namespace ResourcePooling.Async.Implementation
          var instanceAcquired = 0;
          TResourceInstance instance = default;
          ResourceUsageInfo<TResource> usage = default;
-         return new ResourceUsageImpl<TResource>(
+         return new DefaultAsyncResourceUsage<TResource>(
             token,
             async () =>
             {
@@ -273,75 +273,6 @@ namespace ResourcePooling.Async.Implementation
 
 
 
-   }
-
-   internal sealed class ResourceUsageImpl<TResource> : AsyncResourceUsage<TResource>
-   {
-      private const Int32 INITIAL = 0;
-      private const Int32 AWAITING = 1;
-      private const Int32 AWAITED = 2;
-      private const Int32 DISPOSING = 3;
-
-      private Int32 _state;
-      private readonly Func<Task<TResource>> _acquire;
-      private TResource _resource;
-      private readonly Func<Task> _dispose;
-
-      public ResourceUsageImpl(
-         CancellationToken token,
-         Func<Task<TResource>> acquire,
-         Func<Task> dispose
-         )
-      {
-         this.CancellationToken = token;
-         this._acquire = ArgumentValidator.ValidateNotNull( nameof( acquire ), acquire );
-         this._dispose = ArgumentValidator.ValidateNotNull( nameof( dispose ), dispose );
-      }
-
-
-      public async Task AwaitForResource()
-      {
-         Int32 prevVal;
-         if ( ( prevVal = Interlocked.CompareExchange( ref this._state, AWAITING, INITIAL ) ) == INITIAL )
-         {
-            try
-            {
-               this._resource = await this._acquire();
-            }
-            finally
-            {
-               Interlocked.Exchange( ref this._state, AWAITED );
-            }
-         }
-         else if ( prevVal != AWAITED )
-         {
-            throw new InvalidOperationException();
-         }
-      }
-
-      public TResource Resource
-      {
-         get
-         {
-            if ( this._state != AWAITED )
-            {
-               throw new InvalidOperationException();
-            }
-            return this._resource;
-         }
-      }
-
-      public async Task DisposeAsync()
-      {
-         if ( Interlocked.CompareExchange( ref this._state, DISPOSING, AWAITED ) == AWAITED
-            || Interlocked.CompareExchange( ref this._state, DISPOSING, INITIAL ) == INITIAL
-            )
-         {
-            await this._dispose();
-         }
-      }
-
-      public CancellationToken CancellationToken { get; }
    }
 
    /// <summary>

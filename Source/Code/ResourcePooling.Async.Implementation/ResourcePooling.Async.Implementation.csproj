@@ -17,7 +17,7 @@
 
   <!-- Assembly information stuff -->
   <PropertyGroup>
-    <VersionPrefix>1.1.0</VersionPrefix>
+    <VersionPrefix>1.2.0</VersionPrefix>
     <VersionSuffix></VersionSuffix>
     <AssemblyTitle>$(AssemblyName)</AssemblyTitle>
     <Description>Library containing factory methods for resource pool API of ResourcePooling.Async.Abstractions package. The factory methods are defined as extension methods on AsyncResourceFactory&lt;TResource&gt; interface.</Description>
@@ -28,7 +28,7 @@
     <PackageId>$(AssemblyName)</PackageId>
     <PackageVersion>$(VersionPrefix)</PackageVersion>
     <PackageVersion Condition=" '$(VersionSuffix)' != ''">$(PackageVersion)-$(VersionSuffix)</PackageVersion>
-    <PackageReleaseNotes>Implementing new CancellationToken property defined for AsyncResourceUsge&lt;T&gt; in ResourcePooling.Async.Abstractions.</PackageReleaseNotes>
+    <PackageReleaseNotes>Moving default implementation of AsyncResourceUsge&lt;T&gt; to Abstractions project.</PackageReleaseNotes>
     <PackageTags>utility async resource pool</PackageTags>
     <Title>Asynchronous Resource Pooling: Implementation</Title>
   </PropertyGroup>

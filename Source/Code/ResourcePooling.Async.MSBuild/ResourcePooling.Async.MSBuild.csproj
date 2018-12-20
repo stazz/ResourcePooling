@@ -26,7 +26,7 @@
 
   <!-- Assembly information stuff -->
   <PropertyGroup>
-    <VersionPrefix>2.0.0</VersionPrefix>
+    <VersionPrefix>2.1.0</VersionPrefix>
     <VersionSuffix></VersionSuffix>
     <AssemblyTitle>$(AssemblyName)</AssemblyTitle>
     <Description>This project is a bridge between UtilPack.ResourcePooling project and custom MSBuild tasks.</Description>
@@ -37,7 +37,7 @@
     <PackageId>$(AssemblyName)</PackageId>
     <PackageVersion>$(VersionPrefix)</PackageVersion>
     <PackageVersion Condition=" '$(VersionSuffix)' != ''">$(PackageVersion)-$(VersionSuffix)</PackageVersion>
-    <PackageReleaseNotes>The subclasses now get different typed parameter for the UseResource method to be overridden. This is binary-incompatible change..</PackageReleaseNotes>
+    <PackageReleaseNotes>Following new release of ResourcePooling.Async.Abstractions.</PackageReleaseNotes>
     <PackageTags>utility async resource pool msbuild task</PackageTags>
     <Title>Asynchronous Resource Pooling: MSBuild Support</Title>
   </PropertyGroup>

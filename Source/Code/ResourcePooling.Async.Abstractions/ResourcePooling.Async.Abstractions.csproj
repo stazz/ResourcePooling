@@ -17,7 +17,7 @@
 
   <!-- Assembly information stuff -->
   <PropertyGroup>
-    <VersionPrefix>1.1.0</VersionPrefix>
+    <VersionPrefix>1.2.0</VersionPrefix>
     <VersionSuffix></VersionSuffix>
     <AssemblyTitle>$(AssemblyName)</AssemblyTitle>
     <Description>Library containing API for pooling asynchronous resources.</Description>
@@ -28,7 +28,7 @@
     <PackageId>$(AssemblyName)</PackageId>
     <PackageVersion>$(VersionPrefix)</PackageVersion>
     <PackageVersion Condition=" '$(VersionSuffix)' != ''">$(PackageVersion)-$(VersionSuffix)</PackageVersion>
-    <PackageReleaseNotes>Adding cancellation token getter for AsyncResourceUsage&lt;T&gt;.</PackageReleaseNotes>
+    <PackageReleaseNotes>Moving default implementation for AsyncResourceUsage&lt;T&gt; from Implementation to this project. Also fixed a bug causing stack overflow with UseResource extension method (and added tests for all UseResource extension methods).</PackageReleaseNotes>
     <PackageTags>utility async resource pool</PackageTags>
     <Title>Asynchronous Resource Pooling: Abstractions</Title>
   </PropertyGroup>
