@@ -4,13 +4,6 @@
       <TargetFrameworks>netstandard1.3;netstandard2.0;net451</TargetFrameworks>
    </PropertyGroup>
 
-   <PropertyGroup>
-      <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
-      <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
-      <TreatSpecificWarningsAsErrors />
-      <LangVersion>latest</LangVersion>
-   </PropertyGroup>
-
   <PropertyGroup>
     <MicrosoftConfigurationVersion Condition=" '$(TargetFramework)' == 'netstandard2.0' ">2.2.0</MicrosoftConfigurationVersion>
     <MicrosoftConfigurationVersion Condition=" '$(MicrosoftConfigurationVersion)' == '' ">1.1.2</MicrosoftConfigurationVersion>
