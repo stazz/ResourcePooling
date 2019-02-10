@@ -26,6 +26,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using UtilPack;
+using UtilPack.JSON.Configuration;
 
 namespace ResourcePooling.Async.ConfigurationLoading
 {
@@ -88,151 +89,29 @@ namespace ResourcePooling.Async.ConfigurationLoading
          return factoryProvider =>
          {
             var contents = configuration.PoolConfigurationFileContents;
-            IFileProvider fileProvider;
-            String path;
+            var builder = new ConfigurationBuilder();
             if ( !String.IsNullOrEmpty( contents ) )
             {
-               path = StringContentFileProvider.PATH;
-               fileProvider = new StringContentFileProvider( contents );
+               builder.AddJsonContents( contents );
             }
             else
             {
-               path = configuration.PoolConfigurationFilePath;
+               var path = configuration.PoolConfigurationFilePath;
                if ( String.IsNullOrEmpty( path ) )
                {
                   throw new InvalidOperationException( "Configuration file path was not provided." );
                }
                else
                {
-                  path = System.IO.Path.GetFullPath( path );
-                  fileProvider = null; // Use defaults
+                  builder.AddJsonFile( System.IO.Path.GetFullPath( path ) );
                }
             }
 
 
-            return new ConfigurationBuilder()
-               .AddJsonFile( fileProvider, path, false, false )
+            return builder
                .Build()
                .Get( factoryProvider.DataTypeForCreationParameter );
          };
-      }
-   }
-
-
-   internal sealed class StringContentFileProvider : IFileProvider
-   {
-      public const String PATH = ":::non-existing:::";
-
-      private readonly FileInfo _fileInfo;
-
-
-      public StringContentFileProvider( String stringContents )
-         : this( new FileInfo( stringContents ) )
-      {
-
-      }
-
-      public StringContentFileProvider( Byte[] serializedContents )
-         : this( new FileInfo( serializedContents ) )
-      {
-      }
-
-      private StringContentFileProvider( FileInfo info )
-      {
-         this._fileInfo = ArgumentValidator.ValidateNotNull( nameof( info ), info );
-      }
-
-
-
-      public IDirectoryContents GetDirectoryContents( String subpath )
-      {
-         return NotFoundDirectoryContents.Singleton;
-      }
-
-      public IFileInfo GetFileInfo( String subpath )
-      {
-         return String.Equals( PATH, subpath, StringComparison.Ordinal ) ?
-            this._fileInfo :
-            null;
-      }
-
-      public Microsoft.Extensions.Primitives.IChangeToken Watch( String filter )
-      {
-         return ChangeToken.Instance;
-      }
-
-      private sealed class FileInfo : IFileInfo
-      {
-
-         private static readonly Encoding TheEncoding = new UTF8Encoding( false, false );
-
-         private readonly Byte[] _contentsAsBytes;
-
-         public FileInfo( String stringContents )
-            : this( TheEncoding.GetBytes( stringContents ) )
-         {
-
-         }
-
-         public FileInfo( Byte[] serializedContents )
-         {
-            this._contentsAsBytes = serializedContents;
-         }
-
-         public Boolean Exists => true;
-
-         public Int64 Length => this._contentsAsBytes.Length;
-
-         public String PhysicalPath => PATH;
-
-         public String Name => PATH;
-
-         public DateTimeOffset LastModified => DateTimeOffset.MinValue;
-
-         public Boolean IsDirectory => false;
-
-         public System.IO.Stream CreateReadStream()
-         {
-            return new System.IO.MemoryStream( this._contentsAsBytes, 0, this._contentsAsBytes.Length, false, false );
-         }
-      }
-
-      private sealed class ChangeToken : Microsoft.Extensions.Primitives.IChangeToken
-      {
-         public static ChangeToken Instance = new ChangeToken();
-
-         private ChangeToken()
-         {
-
-         }
-
-         public Boolean HasChanged => false;
-
-         public Boolean ActiveChangeCallbacks => true;
-
-         public IDisposable RegisterChangeCallback(
-            Action<Object> callback,
-            Object state
-            )
-         {
-            return NoOpDisposable.Instance;
-         }
-      }
-
-
-   }
-
-   // TODO these extensions probably should be in some dedicated project, maybe in UtilPack repo?
-   internal static class Extensions
-   {
-      public static IConfigurationBuilder AddJsonContents( this IConfigurationBuilder builder, String textualContents )
-      {
-         return builder.AddJsonFile( new StringContentFileProvider( textualContents ), StringContentFileProvider.PATH, false, false );
-      }
-
-      public static IConfigurationBuilder AddJsonContents( this IConfigurationBuilder builder, Byte[] stringAsBytes )
-      {
-         return builder.AddJsonFile( new StringContentFileProvider( stringAsBytes ), StringContentFileProvider.PATH, false, false );
       }
    }
 }
